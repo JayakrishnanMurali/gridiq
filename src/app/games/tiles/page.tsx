@@ -24,10 +24,8 @@ export default function TilesGame() {
   const [matches, setMatches] = useState(0);
   const [showReward, setShowReward] = useState(false);
 
-  // Initialize the timer without auto-start.
   const { time, start, stop, reset } = useTimer(false);
 
-  // initializeGame resets game state and (re)starts the timer.
   const initializeGame = useCallback(() => {
     const initialTiles = [...emojis, ...emojis]
       .sort(() => Math.random() - 0.5)
@@ -42,16 +40,14 @@ export default function TilesGame() {
     setMoves(0);
     setMatches(0);
     setShowReward(false);
-    reset(); // Reset the timer state
-    start(); // Start the timer
+    reset();
+    start();
   }, [reset, start]);
 
-  // Start a new game on mount.
   useEffect(() => {
     initializeGame();
   }, [initializeGame]);
 
-  // Stop the timer when the game is completed.
   useEffect(() => {
     if (matches === emojis.length) {
       stop();

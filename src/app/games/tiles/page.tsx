@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, Star } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useTimer } from "@/hooks/useTimer"; // Adjust the path as needed
+import { formatTime } from "@/lib/utils";
 
 type Tile = {
   id: number;
@@ -22,11 +24,11 @@ export default function TilesGame() {
   const [matches, setMatches] = useState(0);
   const [showReward, setShowReward] = useState(false);
 
-  useEffect(() => {
-    initializeGame();
-  }, []);
+  // Initialize the timer without auto-start.
+  const { time, start, stop, reset } = useTimer(false);
 
-  const initializeGame = () => {
+  // initializeGame resets game state and (re)starts the timer.
+  const initializeGame = useCallback(() => {
     const initialTiles = [...emojis, ...emojis]
       .sort(() => Math.random() - 0.5)
       .map((emoji, index) => ({
@@ -40,28 +42,39 @@ export default function TilesGame() {
     setMoves(0);
     setMatches(0);
     setShowReward(false);
-  };
+    reset(); // Reset the timer state
+    start(); // Start the timer
+  }, [reset, start]);
+
+  // Start a new game on mount.
+  useEffect(() => {
+    initializeGame();
+  }, [initializeGame]);
+
+  // Stop the timer when the game is completed.
+  useEffect(() => {
+    if (matches === emojis.length) {
+      stop();
+    }
+  }, [matches, stop]);
 
   const handleTileClick = (id: number) => {
     if (flippedTiles.length === 2) return;
     if (tiles[id]?.isMatched || tiles[id]?.isFlipped) return;
 
     const newTiles = [...tiles];
-
-    if (!newTiles[id]) return;
-
-    newTiles[id].isFlipped = true;
+    if (newTiles[id]) newTiles[id].isFlipped = true;
     setTiles(newTiles);
 
     const newFlippedTiles = [...flippedTiles, id];
     setFlippedTiles(newFlippedTiles);
 
     if (newFlippedTiles.length === 2) {
-      setMoves(moves + 1);
+      setMoves((prevMoves) => prevMoves + 1);
       const [firstId, secondId] = newFlippedTiles;
       if (
-        firstId &&
-        secondId &&
+        firstId !== undefined &&
+        secondId !== undefined &&
         tiles[firstId]?.emoji === tiles[secondId]?.emoji
       ) {
         if (newTiles[firstId]) newTiles[firstId].isMatched = true;
@@ -72,7 +85,7 @@ export default function TilesGame() {
 
         if (matches + 1 === emojis.length) {
           setTimeout(() => {
-            confetti({
+            void confetti({
               particleCount: 100,
               spread: 70,
               origin: { y: 0.6 },
@@ -107,8 +120,18 @@ export default function TilesGame() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <div className="text-sm text-muted-foreground">Moves</div>
-          <div className="text-2xl font-bold">{moves}</div>
+          <div className="font-bol text-2xl font-bold text-primary">
+            {moves}
+          </div>
         </div>
+
+        <div className="flex flex-col items-center justify-center space-y-1 text-right">
+          <div className="text-sm text-muted-foreground">Time Spent</div>
+          <div className="px-2 text-2xl font-bold text-primary">
+            {formatTime(time)}
+          </div>
+        </div>
+
         <div className="space-y-1 text-right">
           <div className="text-sm text-muted-foreground">Matches</div>
           <div className="text-2xl font-bold text-primary">

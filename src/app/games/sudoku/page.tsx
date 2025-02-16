@@ -2,7 +2,6 @@
 
 import { generateSudoku } from "@/app/games/sudoku/utils";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
 import { RefreshCcw, Star } from "lucide-react";
@@ -37,7 +36,6 @@ export default function SudokuGame() {
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(
     null,
   );
-  const [isNoteMode, setIsNoteMode] = useState(false);
   const [showReward, setShowReward] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
@@ -63,34 +61,42 @@ export default function SudokuGame() {
       if (board[row]?.[col]?.isInitial) return;
 
       const newBoard = board.map((r) => r.map((cell) => ({ ...cell })));
-      if (isNoteMode) {
-        const notes = newBoard[row]?.[col]?.notes;
-        const noteIndex = notes?.indexOf(number);
-        if (noteIndex === -1) {
-          notes?.push(number);
-          notes?.sort((a, b) => a - b);
-        } else {
-          if (noteIndex) notes?.splice(noteIndex, 1);
-        }
-        if (newBoard[row]?.[col]) newBoard[row][col].value = null;
-      } else {
-        if (newBoard[row]?.[col]) newBoard[row][col].value = number;
-        if (newBoard[row]?.[col]) newBoard[row][col].notes = [];
 
-        if (isBoardComplete(newBoard) && isBoardValid(newBoard)) {
-          void confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-          });
-          setShowReward(true);
-        }
+      if (newBoard[row]?.[col]) {
+        newBoard[row][col].value = number;
+        newBoard[row][col].notes = []; // Clear notes when entering a number
+      }
+
+      if (isBoardComplete(newBoard) && isBoardValid(newBoard)) {
+        void confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+        setShowReward(true);
       }
 
       setBoard(newBoard);
     },
-    [selectedCell, board, , isNoteMode],
+    [selectedCell, board],
   );
+
+  const handleNoteToggle = (noteNumber: number) => {
+    if (!selectedCell) return;
+    const [row, col] = selectedCell;
+    if (board[row]?.[col]?.isInitial || board[row]?.[col]?.value) return;
+
+    const newBoard = board.map((r) => r.map((cell) => ({ ...cell })));
+    if (newBoard[row]?.[col]) {
+      const currentNotes = newBoard[row][col].notes;
+      if (currentNotes.includes(noteNumber)) {
+        newBoard[row][col].notes = currentNotes.filter((n) => n !== noteNumber);
+      } else {
+        newBoard[row][col].notes = [...currentNotes, noteNumber].sort();
+      }
+    }
+    setBoard(newBoard);
+  };
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -104,8 +110,10 @@ export default function SudokuGame() {
         handleNumberInput(Number.parseInt(key));
       } else if (key === "Backspace" || key === "Delete") {
         const newBoard = board.map((r) => r.map((cell) => ({ ...cell })));
-        if (newBoard[row]?.[col]) newBoard[row][col].value = null;
-        if (newBoard[row]?.[col]) newBoard[row][col].notes = [];
+        if (newBoard[row]?.[col]) {
+          newBoard[row][col].value = null;
+          newBoard[row][col].notes = [];
+        }
         setBoard(newBoard);
       }
     },
@@ -159,12 +167,11 @@ export default function SudokuGame() {
               <div
                 key={`${rowIndex}-${colIndex}`}
                 className={cn(
-                  "relative flex aspect-square items-center justify-center border border-l-0 border-t-0 border-secondary text-3xl font-bold transition-colors focus-visible:outline-none",
+                  "group relative flex aspect-square items-center justify-center border border-l-0 border-t-0 border-secondary transition-colors focus-visible:outline-none",
                   (rowIndex + 1) % 3 === 0 && "border-b-4",
                   (colIndex + 1) % 3 === 0 && "border-r-4",
                   rowIndex === 0 && "border-t-4",
                   colIndex === 0 && "border-l-4",
-
                   selectedCell?.[0] === rowIndex &&
                     selectedCell?.[1] === colIndex
                     ? "cursor-pointer bg-primary"
@@ -174,13 +181,43 @@ export default function SudokuGame() {
                 onClick={() => handleCellClick(rowIndex, colIndex)}
                 tabIndex={-1}
               >
-                {cell.value}
+                {cell.value ? (
+                  <span className="text-3xl font-bold">{cell.value}</span>
+                ) : (
+                  <div className="grid h-full w-full grid-cols-3 grid-rows-3 p-0.5 text-xs">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
+                      <div
+                        key={number}
+                        className={cn(
+                          "flex items-center justify-center text-xs text-transparent transition-all duration-300 ease-in-out hover:text-foreground/80",
+                          selectedCell?.[0] === rowIndex &&
+                            selectedCell?.[1] === colIndex &&
+                            "group-hover:cursor-pointer",
+                          {
+                            "text-foreground": cell.notes.includes(number),
+                          },
+                        )}
+                        onClick={(e) => {
+                          if (
+                            selectedCell?.[0] === rowIndex &&
+                            selectedCell?.[1] === colIndex
+                          ) {
+                            e.stopPropagation();
+                            handleNoteToggle(number);
+                          }
+                        }}
+                      >
+                        {number}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )),
           )}
         </div>
 
-        <Tabs defaultValue="numbers" className="w-[200px]">
+        {/* <Tabs defaultValue="numbers" className="w-[200px]">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="numbers">Numbers</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -193,7 +230,6 @@ export default function SudokuGame() {
                   variant="outline"
                   className="aspect-square text-lg font-medium"
                   onClick={() => {
-                    setIsNoteMode(false);
                     handleNumberInput(number);
                   }}
                 >
@@ -202,6 +238,7 @@ export default function SudokuGame() {
               ))}
             </div>
           </TabsContent>
+          
           <TabsContent value="notes" className="mt-4">
             <div className="aspect-square rounded-lg border p-2">
               <div className="grid h-full grid-cols-3 grid-rows-3 gap-1">
@@ -211,7 +248,6 @@ export default function SudokuGame() {
                     variant="outline"
                     className="aspect-square p-0 text-sm"
                     onClick={() => {
-                      setIsNoteMode(true);
                       handleNumberInput(number);
                     }}
                   >
@@ -232,7 +268,7 @@ export default function SudokuGame() {
               </div>
             </div>
           </TabsContent>
-        </Tabs>
+        </Tabs> */}
       </div>
 
       {showReward && (

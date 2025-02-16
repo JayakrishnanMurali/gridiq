@@ -1,3 +1,120 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 263 47% 100%;
+    --foreground: 263 53% 0%;
+    --muted: 263 24% 92%;
+    --muted-foreground: 263 6% 37%;
+    --popover: 263 47% 100%;
+    --popover-foreground: 263 53% 0%;
+    --card: 0 0% 99%;
+    --card-foreground: 0 0% 0%;
+    --border: 263 3% 94%;
+    --input: 263 3% 94%;
+    --primary: 263 92% 78%;
+    --primary-foreground: 263 92% 18%;
+    --secondary: 263 18% 83%;
+    --secondary-foreground: 263 18% 23%;
+    --accent: 263 24% 73%;
+    --accent-foreground: 263 24% 13%;
+    --destructive: 12 87% 34%;
+    --destructive-foreground: 12 87% 94%;
+    --ring: 263 92% 78%;
+    --chart-1: 263 92% 78%;
+    --chart-2: 263 18% 83%;
+    --chart-3: 263 24% 73%;
+    --chart-4: 263 18% 86%;
+    --chart-5: 263 95% 78%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 263 31% 3%;
+    --foreground: 263 21% 100%;
+    --muted: 263 24% 8%;
+    --muted-foreground: 263 6% 63%;
+    --popover: 263 31% 3%;
+    --popover-foreground: 263 21% 100%;
+    --card: 263 31% 4%;
+    --card-foreground: 0 0% 100%;
+    --border: 263 3% 11%;
+    --input: 263 3% 11%;
+    --primary: 263 92% 78%;
+    --primary-foreground: 263 92% 18%;
+    --secondary: 263 4% 15%;
+    --secondary-foreground: 263 4% 75%;
+    --accent: 263 13% 22%;
+    --accent-foreground: 263 13% 82%;
+    --destructive: 12 87% 47%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 263 92% 78%;
+    --chart-1: 263 92% 78%;
+    --chart-2: 263 4% 15%;
+    --chart-3: 263 13% 22%;
+    --chart-4: 263 4% 18%;
+    --chart-5: 263 95% 78%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .game-card {
+    @apply relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.1),
+      hsl(var(--secondary) / 0.1)
+    );
+  }
+
+  .game-card::before {
+    content: "";
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.2),
+      hsl(var(--secondary) / 0.2)
+    );
+  }
+
+  .game-card:hover::before {
+    @apply opacity-100;
+  }
+
+  .level-badge {
+    @apply flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-lg font-bold text-primary-foreground shadow-lg;
+  }
+
+  .xp-bar {
+    @apply h-2 rounded-full bg-gradient-to-r from-primary to-secondary;
+  }
+
+  .achievement-unlock {
+    animation: unlock 0.5s ease-out;
+  }
+
+  @keyframes unlock {
+    0% {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+    70% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
